@@ -1,5 +1,5 @@
 // API base URL - change this to your actual API
-const API_BASE = "/api";
+const API_BASE = "http://localhost:5078/api";
 
 interface ApiResponse<T> {
   success: boolean;

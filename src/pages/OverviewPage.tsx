@@ -8,9 +8,11 @@ import {
   AreaChart, Area, BarChart, Bar, PieChart, Pie, Cell,
   XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend,
 } from "recharts";
+import { useState } from "react";
 
 const CustomTooltip = ({ active, payload, label }: any) => {
   if (!active || !payload?.length) return null;
+  
   return (
     <div className="bg-popover border border-border rounded-lg p-3 shadow-xl">
       <p className="text-xs font-medium text-foreground mb-1">{label}</p>
@@ -24,36 +26,61 @@ const CustomTooltip = ({ active, payload, label }: any) => {
 };
 
 export default function OverviewPage() {
+  const [year, setYear] = useState(2024);
   const { data: revenueByYear = [] } = useApiQuery(["revenue-by-year"], revenueApi.byYear);
-  const { data: revenueByMonth = [] } = useApiQuery(["revenue-by-month-2024"], () => revenueApi.byMonth(2024));
+  const { data: revenueByMonth = [] } = useApiQuery(["revenue-by-month", year.toString()], () => revenueApi.byMonth(year));
   const { data: concentration = [] } = useApiQuery(["revenue-concentration"], revenueApi.concentration);
-  const { data: marginData = [] } = useApiQuery(["trends-margin-2024"], () => trendsApi.margin(2024));
-
+  const { data: marginData = [] } = useApiQuery(["trends-margin", year.toString()], () => trendsApi.margin(year));
+  
   const totalRevenue = revenueByYear.reduce((sum, d) => sum + d.value, 0);
-  const currentYear = revenueByYear.find(d => d.label === "2024")?.value ?? 0;
-  const priorYear = revenueByYear.find(d => d.label === "2023")?.value ?? 0;
+  const currentYear = revenueByYear.find(d => d.label === `${year}`)?.value ?? 0;
+  const priorYear = revenueByYear.find(d => d.label === `${year - 1}`)?.value ?? 0;
   const growth = priorYear > 0 ? ((currentYear - priorYear) / priorYear) * 100 : 0;
   const totalMargin = marginData.reduce((sum, d) => sum + d.margin, 0);
   const avgMarginRate = marginData.length > 0
     ? (totalMargin / marginData.reduce((sum, d) => sum + d.totalValue, 0)) * 100
     : 0;
+    console.log("Revenue by Year:", revenueByMonth);
 
+
+const years = revenueByYear
+  .map(d => Number(d.label))
+  .filter(y => !Number.isNaN(y));
+
+const minYear = Math.min(...years);
+const maxYear = Math.max(...years);
+
+const yearRange = years.length > 0 ? `${minYear}–${maxYear}` : "";
   return (
     <div className="space-y-6">
       <div>
         <h1 className="text-2xl font-bold tracking-tight">Vue d'ensemble</h1>
-        <p className="text-sm text-muted-foreground mt-1">Tableau de bord analytique — Année 2024</p>
+        <p className="text-sm text-muted-foreground mt-1">Tableau de bord analytique — Année {year}</p>
       </div>
+      <div className="flex items-center justify-between">
+  
 
+  <select
+    value={year}
+    onChange={(e) => setYear(Number(e.target.value))}
+    className="bg-background border border-border rounded-lg px-3 py-2 text-sm shadow-sm focus:outline-none focus:ring-2 focus:ring-primary"
+  >
+    {years.map((y) => (
+      <option key={y} value={y}>
+        {y}
+      </option>
+    ))}
+  </select>
+</div>
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-        <KpiCard title="CA 2024" value={currentYear} format="currency" trend={growth} icon={<DollarSign className="w-4 h-4" />} />
-        <KpiCard title="CA Total" value={totalRevenue} format="currency" subtitle="2020–2024" icon={<BarChart3 className="w-4 h-4" />} />
+        <KpiCard title={`CA ${year}`} value={currentYear} format="currency" trend={growth} icon={<DollarSign className="w-4 h-4" />} />
+        <KpiCard title="CA Total" value={totalRevenue} format="currency" subtitle={yearRange} icon={<BarChart3 className="w-4 h-4" />} />
         <KpiCard title="Marge Totale" value={totalMargin} format="currency" icon={<TrendingUp className="w-4 h-4" />} />
         <KpiCard title="Taux de Marge" value={`${avgMarginRate.toFixed(1)}%`} subtitle="Moyenne annuelle" icon={<Users className="w-4 h-4" />} />
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-        <ChartCard title="Chiffre d'affaires par mois" description="Évolution mensuelle 2024">
+        <ChartCard title="Chiffre d'affaires par mois" description={`Évolution mensuelle ${year}`}>
           <ResponsiveContainer width="100%" height={280}>
             <AreaChart data={revenueByMonth}>
               <defs>

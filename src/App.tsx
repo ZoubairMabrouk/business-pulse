@@ -11,6 +11,7 @@ import TaxPage from "@/pages/TaxPage";
 import ClientsPage from "@/pages/ClientsPage";
 import DiscountsPage from "@/pages/DiscountsPage";
 import NotFound from "./pages/NotFound.tsx";
+import { DiscussionBull } from "./components/ui/DiscussionBull.tsx";
 
 const queryClient = new QueryClient();
 
@@ -19,6 +20,7 @@ const App = () => (
     <TooltipProvider>
       <Toaster />
       <Sonner />
+      <DiscussionBull />
       <BrowserRouter>
         <Routes>
           <Route element={<DashboardLayout />}>
