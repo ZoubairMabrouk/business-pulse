@@ -12,6 +12,7 @@ import ClientsPage from "@/pages/ClientsPage";
 import DiscountsPage from "@/pages/DiscountsPage";
 import NotFound from "./pages/NotFound.tsx";
 import { DiscussionBull } from "./components/ui/DiscussionBull.tsx";
+import { GenerativePage } from "./pages/GenarativePage.tsx";
 
 const queryClient = new QueryClient();
 
@@ -20,7 +21,7 @@ const App = () => (
     <TooltipProvider>
       <Toaster />
       <Sonner />
-      <DiscussionBull />
+      {/* <DiscussionBull /> */}
       <BrowserRouter>
         <Routes>
           <Route element={<DashboardLayout />}>
@@ -30,6 +31,7 @@ const App = () => (
             <Route path="/tax" element={<TaxPage />} />
             <Route path="/clients" element={<ClientsPage />} />
             <Route path="/discounts" element={<DiscountsPage />} />
+            <Route path="/chat" element={<GenerativePage />} />
           </Route>
           <Route path="*" element={<NotFound />} />
         </Routes>

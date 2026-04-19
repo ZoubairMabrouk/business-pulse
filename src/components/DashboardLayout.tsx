@@ -1,5 +1,5 @@
 import { NavLink, Outlet } from "react-router-dom";
-import { BarChart3, TrendingUp, Receipt, Users, LayoutDashboard, Percent } from "lucide-react";
+import { BarChart3, TrendingUp, Receipt, Users, LayoutDashboard, Percent, Brain } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 const navItems = [
@@ -9,6 +9,7 @@ const navItems = [
   { to: "/tax", icon: Receipt, label: "Fiscalité" },
   { to: "/clients", icon: Users, label: "Clients" },
   { to: "/discounts", icon: Percent, label: "Remises" },
+  { to: "/chat", icon: Brain, label: "Génération de contenu" },
 ];
 
 export function DashboardLayout() {
