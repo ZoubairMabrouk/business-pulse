@@ -231,7 +231,7 @@ const MessageBubble: React.FC<{ msg: Message }> = ({ msg }) => {
               ? "bg-primary text-primary-foreground rounded-tr-sm shadow-md"
               : "glass-card rounded-tl-sm"
           )}>
-            <div className={cn("prose prose-sm max-w-none", isUser ? "prose-invert" : "dark:prose-invert")}>
+            <div className="markdown-body text-[13.5px] leading-relaxed [&_p]:my-1.5 [&_ul]:list-disc [&_ul]:pl-5 [&_ol]:list-decimal [&_ol]:pl-5 [&_code]:px-1 [&_code]:py-0.5 [&_code]:rounded [&_code]:bg-muted [&_code]:text-[12px] [&_code]:font-mono [&_pre]:p-3 [&_pre]:rounded-lg [&_pre]:bg-muted [&_pre]:overflow-auto [&_a]:text-primary [&_a]:underline [&_strong]:font-semibold [&_h1]:text-base [&_h2]:text-sm [&_h3]:text-sm [&_h1]:font-bold [&_h2]:font-semibold [&_h3]:font-semibold [&_table]:text-xs [&_th]:text-left [&_th]:font-semibold [&_th]:px-2 [&_th]:py-1 [&_td]:px-2 [&_td]:py-1 [&_th]:border-b [&_th]:border-border [&_td]:border-b [&_td]:border-border/50">
               <ReactMarkdown remarkPlugins={[remarkGfm]}>{msg.text || ""}</ReactMarkdown>
             </div>
             {!isUser && msg.text && (
