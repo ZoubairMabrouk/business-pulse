@@ -1,4 +1,5 @@
-import { NavLink, Outlet, useNavigate } from "react-router-dom";
+import { useState } from "react";
+import { NavLink, Outlet } from "react-router-dom";
 import {
   BarChart3,
   TrendingUp,
@@ -6,113 +7,170 @@ import {
   Users,
   LayoutDashboard,
   Percent,
-  Brain,
+  Sparkles,
   UserCircle,
   ShieldCheck,
-  LogOut,
+  ChevronLeft,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/context/AuthContext";
+import { TopNavbar } from "./TopNavbar";
 
-const navItems = [
-  { to: "/", icon: LayoutDashboard, label: "Vue d'ensemble" },
-  { to: "/revenue", icon: BarChart3, label: "Chiffre d'affaires" },
-  { to: "/trends", icon: TrendingUp, label: "Tendances" },
-  { to: "/tax", icon: Receipt, label: "Fiscalité" },
-  { to: "/clients", icon: Users, label: "Clients" },
-  { to: "/discounts", icon: Percent, label: "Remises" },
-  { to: "/chat", icon: Brain, label: "Génération de contenu" },
-  { to: "/me", icon: UserCircle, label: "Mon profil" },
+const navGroups = [
+  {
+    label: "Pilotage",
+    items: [
+      { to: "/", icon: LayoutDashboard, label: "Vue d'ensemble" },
+      { to: "/revenue", icon: BarChart3, label: "Chiffre d'affaires" },
+      { to: "/trends", icon: TrendingUp, label: "Tendances" },
+    ],
+  },
+  {
+    label: "Analyse",
+    items: [
+      { to: "/tax", icon: Receipt, label: "Fiscalité" },
+      { to: "/clients", icon: Users, label: "Clients" },
+      { to: "/discounts", icon: Percent, label: "Remises" },
+    ],
+  },
+  {
+    label: "Intelligence",
+    items: [
+      { to: "/chat", icon: Sparkles, label: "Assistant IA", badge: "AI" },
+      { to: "/me", icon: UserCircle, label: "Mon profil" },
+    ],
+  },
 ];
 
 export function DashboardLayout() {
-  const { user, role, logout } = useAuth();
-  const navigate = useNavigate();
+  const { role } = useAuth();
+  const [collapsed, setCollapsed] = useState(false);
   const isAdmin = (role || "").toLowerCase() === "admin";
 
-  const handleLogout = () => {
-    logout();
-    navigate("/login", { replace: true });
-  };
-
   return (
-    <div className="flex h-screen overflow-hidden">
+    <div className="flex h-screen overflow-hidden bg-background bg-mesh">
       {/* Sidebar */}
-      <aside className="w-64 bg-sidebar border-r border-sidebar-border flex flex-col shrink-0">
-        <div className="p-5 border-b border-sidebar-border">
-          <div className="flex items-center gap-2">
-            <div className="w-8 h-8 rounded-lg bg-primary flex items-center justify-center">
-              <BarChart3 className="w-4 h-4 text-primary-foreground" />
+      <aside
+        className={cn(
+          "shrink-0 bg-sidebar border-r border-sidebar-border flex flex-col transition-[width] duration-300 ease-out",
+          collapsed ? "w-[72px]" : "w-64"
+        )}
+      >
+        <div className="h-16 flex items-center justify-between px-4 border-b border-sidebar-border">
+          <div className="flex items-center gap-2.5 overflow-hidden">
+            <div className="w-9 h-9 rounded-xl gradient-primary flex items-center justify-center shrink-0 shadow-md">
+              <BarChart3 className="w-5 h-5 text-primary-foreground" />
             </div>
-            <div>
-              <h1 className="text-sm font-bold text-sidebar-accent-foreground">Analytics BI</h1>
-              <p className="text-[10px] text-sidebar-foreground">Business Intelligence</p>
-            </div>
+            {!collapsed && (
+              <div className="leading-tight animate-fade-in">
+                <h1 className="text-sm font-bold tracking-tight">Analytics<span className="gradient-text">.BI</span></h1>
+                <p className="text-[10px] text-sidebar-foreground">Decision Platform</p>
+              </div>
+            )}
           </div>
         </div>
-        <nav className="flex-1 p-3 space-y-1">
-          {navItems.map((item) => (
-            <NavLink
-              key={item.to}
-              to={item.to}
-              end={item.to === "/"}
-              className={({ isActive }) =>
-                cn(
-                  "flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm transition-all",
-                  isActive
-                    ? "bg-sidebar-accent text-sidebar-accent-foreground font-medium glow-primary"
-                    : "text-sidebar-foreground hover:bg-sidebar-accent/50 hover:text-sidebar-accent-foreground"
-                )
-              }
-            >
-              <item.icon className="w-4 h-4" />
-              {item.label}
-            </NavLink>
+
+        <nav className="flex-1 overflow-y-auto scrollbar-thin py-4 px-3 space-y-5">
+          {navGroups.map((group) => (
+            <div key={group.label}>
+              {!collapsed && (
+                <p className="px-3 mb-1.5 text-[10px] font-semibold uppercase tracking-wider text-sidebar-foreground/60">
+                  {group.label}
+                </p>
+              )}
+              <div className="space-y-0.5">
+                {group.items.map((item) => (
+                  <NavLink
+                    key={item.to}
+                    to={item.to}
+                    end={item.to === "/"}
+                    title={collapsed ? item.label : undefined}
+                    className={({ isActive }) =>
+                      cn(
+                        "group relative flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm transition-all",
+                        isActive
+                          ? "bg-sidebar-accent text-sidebar-accent-foreground font-medium shadow-sm"
+                          : "text-sidebar-foreground hover:bg-sidebar-accent/60 hover:text-sidebar-accent-foreground"
+                      )
+                    }
+                  >
+                    {({ isActive }) => (
+                      <>
+                        {isActive && (
+                          <span className="absolute left-0 top-1/2 -translate-y-1/2 h-6 w-[3px] rounded-r-full gradient-primary" />
+                        )}
+                        <item.icon className={cn("w-4 h-4 shrink-0 transition-colors", isActive && "text-primary")} />
+                        {!collapsed && <span className="flex-1 truncate">{item.label}</span>}
+                        {!collapsed && "badge" in item && item.badge && (
+                          <span className="text-[9px] font-bold px-1.5 py-0.5 rounded-md gradient-accent text-primary-foreground">
+                            {item.badge}
+                          </span>
+                        )}
+                      </>
+                    )}
+                  </NavLink>
+                ))}
+              </div>
+            </div>
           ))}
+
           {isAdmin && (
-            <NavLink
-              to="/admin/users"
-              className={({ isActive }) =>
-                cn(
-                  "flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm transition-all",
-                  isActive
-                    ? "bg-sidebar-accent text-sidebar-accent-foreground font-medium glow-primary"
-                    : "text-sidebar-foreground hover:bg-sidebar-accent/50 hover:text-sidebar-accent-foreground"
-                )
-              }
-            >
-              <ShieldCheck className="w-4 h-4" />
-              Utilisateurs (Admin)
-            </NavLink>
+            <div>
+              {!collapsed && (
+                <p className="px-3 mb-1.5 text-[10px] font-semibold uppercase tracking-wider text-sidebar-foreground/60">
+                  Admin
+                </p>
+              )}
+              <NavLink
+                to="/admin/users"
+                title={collapsed ? "Utilisateurs" : undefined}
+                className={({ isActive }) =>
+                  cn(
+                    "flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm transition-all",
+                    isActive
+                      ? "bg-sidebar-accent text-sidebar-accent-foreground font-medium"
+                      : "text-sidebar-foreground hover:bg-sidebar-accent/60 hover:text-sidebar-accent-foreground"
+                  )
+                }
+              >
+                <ShieldCheck className="w-4 h-4 shrink-0" />
+                {!collapsed && <span>Utilisateurs</span>}
+              </NavLink>
+            </div>
           )}
         </nav>
-        <div className="p-3 border-t border-sidebar-border space-y-2">
-          {user && (
-            <div className="px-2 py-1">
-              <p className="text-xs font-medium text-sidebar-accent-foreground truncate">
-                {user.fullName || user.email}
-              </p>
-              <p className="text-[10px] text-sidebar-foreground truncate">
-                {role || "User"}
+
+        <div className="p-3 border-t border-sidebar-border">
+          {!collapsed && (
+            <div className="rounded-xl p-3 bg-gradient-to-br from-primary/10 via-accent/5 to-transparent border border-border/50 mb-2">
+              <div className="flex items-center gap-2 mb-1">
+                <Sparkles className="w-3.5 h-3.5 text-accent" />
+                <span className="text-xs font-semibold">Pro tips</span>
+              </div>
+              <p className="text-[11px] text-muted-foreground leading-snug">
+                Posez vos questions à l'IA pour générer des dashboards à la volée.
               </p>
             </div>
           )}
           <button
-            onClick={handleLogout}
-            className="w-full flex items-center gap-2 px-3 py-2 rounded-lg text-sm text-sidebar-foreground hover:bg-sidebar-accent/50 hover:text-sidebar-accent-foreground transition-all"
+            onClick={() => setCollapsed(c => !c)}
+            className="w-full flex items-center justify-center gap-2 px-3 py-2 rounded-lg text-xs text-sidebar-foreground hover:bg-sidebar-accent/60 transition-all"
           >
-            <LogOut className="w-4 h-4" />
-            Déconnexion
+            <ChevronLeft className={cn("w-4 h-4 transition-transform", collapsed && "rotate-180")} />
+            {!collapsed && <span>Réduire</span>}
           </button>
         </div>
       </aside>
 
-      {/* Main content */}
-      <main className="flex-1 overflow-y-auto">
-        <div className="p-6 max-w-[1400px] mx-auto">
-          <Outlet />
-        </div>
-      </main>
+      {/* Main */}
+      <div className="flex-1 flex flex-col min-w-0">
+        <TopNavbar onToggleSidebar={() => setCollapsed(c => !c)} />
+        <main className="flex-1 overflow-y-auto scrollbar-thin">
+          <div className="p-6 max-w-[1500px] mx-auto animate-fade-in">
+            <Outlet />
+          </div>
+        </main>
+      </div>
     </div>
   );
 }
