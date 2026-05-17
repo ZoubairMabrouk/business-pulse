@@ -1,0 +1,210 @@
+# ============================================================
+# CI/CD Pipeline — Frontend React (Business Pulse)
+# Repository : https://github.com/ZoubairMabrouk/business-pulse
+# Trigger    : Push sur la branche main
+# Version    : 1.0.0
+# ============================================================
+
+name: ⚛️ Frontend React — Build & Deploy
+
+on:
+  push:
+    branches:
+      - main
+    paths-ignore:
+      - '**.md'
+  workflow_dispatch:
+
+env:
+  SERVICE_NAME: frontend
+  DOCKER_IMAGE: business-pulse-frontend
+  COMPOSE_SERVICE: frontend
+  DEPLOY_PATH: /opt/microservices
+  NODE_VERSION: '20'
+
+permissions:
+  contents: read
+  packages: write
+
+jobs:
+  # ─────────────────────────────────────────────
+  # JOB 1 : Lint & Tests React
+  # ─────────────────────────────────────────────
+  code-quality:
+    name: 🔍 React Lint & Tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: 📥 Checkout
+        uses: actions/checkout@v4
+
+      - name: 🟢 Configuration Node.js ${{ env.NODE_VERSION }}
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+
+      - name: 📦 Installation des dépendances
+        run: npm ci --prefer-offline
+
+      - name: 🔍 ESLint — Analyse statique
+        run: npm run lint
+        continue-on-error: false
+
+      - name: 🎨 Prettier — Vérification formatage
+        run: npm run format:check
+        continue-on-error: true
+
+      - name: 🧪 Tests unitaires (Vitest/Jest)
+        run: npm run test -- --coverage --watchAll=false
+        continue-on-error: false
+
+      - name: 🏗️ Test du build de production
+        run: npm run build
+        env:
+          VITE_API_URL: https://api.yourdomain.com
+          VITE_ENV: production
+
+      - name: 📦 Mise en cache des artifacts de build
+        uses: actions/cache@v4
+        with:
+          path: dist/
+          key: build-${{ github.sha }}
+
+  # ─────────────────────────────────────────────
+  # JOB 2 : Build Docker Multi-stage
+  # ─────────────────────────────────────────────
+  docker-build:
+    name: 🐳 Docker Multi-stage Build
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    needs: code-quality
+    outputs:
+      image_version: ${{ steps.version.outputs.version }}
+
+    steps:
+      - name: 📥 Checkout
+        uses: actions/checkout@v4
+
+      - name: 🏷️ Calcul de la version
+        id: version
+        run: |
+          VERSION="$(date +'%Y.%m.%d')-${GITHUB_SHA::8}"
+          echo "version=${VERSION}" >> $GITHUB_OUTPUT
+
+      - name: 🔧 Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: 🔐 Login GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: 🏷️ Métadonnées
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ghcr.io/${{ github.repository_owner }}/${{ env.DOCKER_IMAGE }}
+          tags: |
+            type=raw,value=latest
+            type=raw,value=${{ steps.version.outputs.version }}
+            type=sha,prefix=sha-
+
+      - name: 🏗️ Build & Push (multi-stage : Node → Nginx)
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          file: ./Dockerfile
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          platforms: linux/amd64
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+          build-args: |
+            VITE_API_URL=${{ secrets.VITE_API_URL }}
+            VITE_ENV=production
+            BUILD_VERSION=${{ steps.version.outputs.version }}
+
+  # ─────────────────────────────────────────────
+  # JOB 3 : Déploiement
+  # ─────────────────────────────────────────────
+  deploy:
+    name: 🚀 Deploy Frontend to VPS
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    needs: docker-build
+    environment:
+      name: production
+      url: https://app.yourdomain.com
+
+    steps:
+      - name: 🔐 Configuration SSH
+        run: |
+          mkdir -p ~/.ssh && chmod 700 ~/.ssh
+          echo "${{ secrets.SSH_PRIVATE_KEY }}" > ~/.ssh/deploy_key
+          chmod 600 ~/.ssh/deploy_key
+          ssh-keyscan -H ${{ secrets.SSH_HOST }} >> ~/.ssh/known_hosts 2>/dev/null
+
+      - name: 🚀 Déploiement
+        run: |
+          ssh -i ~/.ssh/deploy_key \
+            -o StrictHostKeyChecking=yes \
+            ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }} \
+            bash -s << 'ENDSSH'
+              set -euo pipefail
+
+              echo "⚛️  Déploiement : business-pulse-frontend"
+              cd /opt/microservices
+
+              echo "$GHCR_TOKEN" | docker login ghcr.io -u "$GHCR_USER" --password-stdin
+              docker compose pull frontend
+              docker compose up -d --no-deps frontend
+
+              # Reload Nginx pour appliquer la nouvelle config si nécessaire
+              docker exec nginx nginx -s reload 2>/dev/null || true
+
+              echo "✅ Frontend déployé avec succès !"
+          ENDSSH
+        env:
+          GHCR_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GHCR_USER: ${{ github.actor }}
+
+      - name: 🔒 Nettoyage SSH
+        if: always()
+        run: rm -f ~/.ssh/deploy_key
+
+  notify-success:
+    name: 📬 Telegram — Succès
+    runs-on: ubuntu-latest
+    needs: [docker-build, deploy]
+    if: success()
+    steps:
+      - name: ✅ Notification
+        run: |
+          curl -s -X POST \
+            "https://api.telegram.org/bot${{ secrets.TELEGRAM_BOT_TOKEN }}/sendMessage" \
+            -H "Content-Type: application/json" \
+            -d "{
+              \"chat_id\": \"${{ secrets.TELEGRAM_CHAT_ID }}\",
+              \"text\": \"✅ *Frontend Déployé*\n\n⚛️ *App* : Business Pulse Frontend\n🏷️ *Version* : \`${{ needs.docker-build.outputs.image_version }}\`\n👤 *Auteur* : ${{ github.actor }}\n🔗 [Voir workflow](${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }})\",
+              \"parse_mode\": \"Markdown\"
+            }"
+
+  notify-failure:
+    name: 📬 Telegram — Échec
+    runs-on: ubuntu-latest
+    needs: [code-quality, docker-build, deploy]
+    if: failure()
+    steps:
+      - name: ❌ Notification
+        run: |
+          curl -s -X POST \
+            "https://api.telegram.org/bot${{ secrets.TELEGRAM_BOT_TOKEN }}/sendMessage" \
+            -H "Content-Type: application/json" \
+            -d "{
+              \"chat_id\": \"${{ secrets.TELEGRAM_CHAT_ID }}\",
+              \"text\": \"❌ *Frontend — Échec*\n\n👤 ${{ github.actor }}\n🔗 [Logs](${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }})\",
+              \"parse_mode\": \"Markdown\"
+            }"

@@ -38,7 +38,7 @@ const App = () => (
             <Route path="/register" element={<RegisterPage />} />
 
             {/* Authenticated */}
-            <Route element={<ProtectedRoute />}>
+            <Route>
               <Route element={<DashboardLayout />}>
                 <Route path="/" element={<OverviewPage />} />
                 <Route path="/revenue" element={<RevenuePage />} />

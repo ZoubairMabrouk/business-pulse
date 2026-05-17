@@ -12,7 +12,8 @@ export default function RegisterPage() {
   const { register } = useAuth();
   const navigate = useNavigate();
 
-  const [fullName, setFullName] = useState("");
+  const [firstName, setFirstName] = useState("");
+  const [lastName, setLastName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
@@ -27,7 +28,7 @@ export default function RegisterPage() {
     }
     setLoading(true);
     try {
-      await register({ email: email.trim(), password, fullName: fullName.trim() || undefined });
+      await register({ email: email.trim(), password, firstName: firstName.trim() || undefined, lastName: lastName.trim() || undefined });
       navigate("/", { replace: true });
     } catch (err) {
       const apiErr = err as ApiError;
@@ -44,15 +45,28 @@ export default function RegisterPage() {
     <AuthShell title="Créer un compte" subtitle="Rejoignez la plateforme analytique en moins d'une minute.">
       <form onSubmit={onSubmit} className="space-y-4">
           <div className="space-y-2">
-            <Label htmlFor="fullName">Nom complet</Label>
+            <Label htmlFor="FirstName">Prénom</Label>
             <Input
-              id="fullName"
+              id="FirstName"
               type="text"
               autoComplete="name"
-              value={fullName}
-              onChange={(e) => setFullName(e.target.value)}
+              value={firstName}
+              onChange={(e) => setFirstName(e.target.value)}
               maxLength={100}
-              placeholder="Marie Dupont"
+              placeholder="Marie"
+              className="h-11"
+            />
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="LastName">Nom</Label>
+            <Input
+              id="LastName"
+              type="text"
+              autoComplete="name"
+              value={lastName}
+              onChange={(e) => setLastName(e.target.value)}
+              maxLength={100}
+              placeholder="Dupont"
               className="h-11"
             />
           </div>

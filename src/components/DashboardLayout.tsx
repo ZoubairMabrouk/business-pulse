@@ -59,12 +59,12 @@ export function DashboardLayout() {
         <div className="h-16 flex items-center justify-between px-4 border-b border-sidebar-border">
           <div className="flex items-center gap-2.5 overflow-hidden">
             <div className="w-9 h-9 rounded-xl gradient-primary flex items-center justify-center shrink-0 shadow-md">
-              <BarChart3 className="w-5 h-5 text-primary-foreground" />
+              <img src="assets/EDI.jpg" alt="Logo" className="w-10 h-10" />
             </div>
             {!collapsed && (
               <div className="leading-tight animate-fade-in">
-                <h1 className="text-sm font-bold tracking-tight">Analytics<span className="gradient-text">.BI</span></h1>
-                <p className="text-[10px] text-sidebar-foreground">Decision Platform</p>
+                <h1 className="text-sm font-bold tracking-tight gradient-text">EDI-Solutions</h1>
+                <p className="text-[10px] text-sidebar-foreground">Analytics<span className="gradient-text">.BI</span></p>
               </div>
             )}
           </div>

@@ -21,7 +21,8 @@ export interface LoginPayload {
 export interface RegisterPayload {
   email: string;
   password: string;
-  fullName?: string;
+  firstName?: string;
+  lastName?: string;
 }
 
 export interface ApiError {
