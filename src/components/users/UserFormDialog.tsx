@@ -104,7 +104,7 @@ export function UserFormDialog({ open, onOpenChange, mode, user }: Props) {
     }
   }, [open, isEdit, user, reset]);
 
-  const password = watch("password" as never) as string | undefined;
+  const password = (watch as (n: string) => unknown)("password") as string | undefined;
   const role = watch("role");
   const status = watch("status");
 
@@ -116,7 +116,7 @@ export function UserFormDialog({ open, onOpenChange, mode, user }: Props) {
       } else {
         const v = values as CreateUserInput;
         const { confirmPassword: _c, ...payload } = v;
-        await createMut.mutateAsync(payload);
+        await createMut.mutateAsync(payload as never);
         toast.success("Utilisateur créé");
       }
       onOpenChange(false);
