@@ -340,7 +340,7 @@ export default function AdminUsersPage() {
               ) : isError ? (
                 <TableRow>
                   <TableCell colSpan={8} className="text-center py-10 text-destructive">
-                    {(error as ApiError)?.message || "Erreur de chargement"}
+                    {(error as unknown as ApiError)?.message || "Erreur de chargement"}
                     <div className="mt-3">
                       <Button size="sm" variant="outline" onClick={() => refetch()}>
                         Réessayer
